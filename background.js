@@ -1,4 +1,4 @@
-const PING_URL = "https://ecom-backend-nest-prisma-postgres-nsa.onrender.com/api/docs";
+const PING_URL = "example.com/ecamplepage";
 const ALARM_NAME = "renderKeepAlive";
 const INTERVAL_MIN = 0.5; // 30 seconds (requires Chrome 120+; clamps to 1min on older)
 
