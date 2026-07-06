@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Render Keep-Alive</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 280px;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      user-select: none;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f0f1a 100%);
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid #1e1e3a;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon { font-size: 20px; line-height: 1; }
+    .header-text h1 { font-size: 14px; font-weight: 700; color: #f1f5f9; }
+    .header-text p { font-size: 11px; color: #64748b; margin-top: 1px; }
+
+    /* ── Status card ─────────────────────────── */
+    .card {
+      margin: 12px;
+      background: #161628;
+      border: 1px solid #1e1e3a;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .status-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .dot.inactive {
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
+    }
+    .dot.pinging {
+      animation: pulse 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes pulse {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* ── Toggle button ───────────────────────── */
+    .toggle-btn {
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #22c55e;
+      color: #fff;
+    }
+    .toggle-btn.off { background: #374151; color: #9ca3af; }
+    .toggle-btn:hover { opacity: 0.85; }
+
+    /* ── Info rows ───────────────────────────── */
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-top: 1px solid #1e1e3a;
+    }
+    .info-row:first-of-type { border-top: none; margin-top: -4px; }
+    .info-key { color: #64748b; font-size: 11px; }
+    .info-val { font-size: 12px; font-weight: 500; color: #cbd5e1; }
+    .info-val.ok  { color: #22c55e; }
+    .info-val.err { color: #f87171; }
+
+    /* ── Progress bar ────────────────────────── */
+    .progress-section { margin-top: 10px; }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 11px;
+      color: #64748b;
+    }
+    #countdown-val { color: #94a3b8; font-weight: 600; }
+    .progress-bar {
+      height: 4px;
+      background: #1e1e3a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #4ade80);
+      border-radius: 4px;
+      transition: width 1s linear;
+      width: 100%;
+    }
+
+    /* ── Ping Now button ─────────────────────── */
+    .ping-btn {
+      display: block;
+      width: calc(100% - 24px);
+      margin: 0 12px 12px;
+      padding: 8px;
+      background: #1e1b4b;
+      border: 1px solid #312e81;
+      border-radius: 8px;
+      color: #a5b4fc;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .ping-btn:hover { background: #312e81; color: #fff; }
+    .ping-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── URL bar ─────────────────────────────── */
+    .url-bar {
+      margin: 0 12px 12px;
+      padding: 7px 10px;
+      background: #0a0a14;
+      border: 1px solid #1e1e3a;
+      border-radius: 7px;
+      font-size: 10px;
+      color: #475569;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-icon">🔄</div>
+    <div class="header-text">
+      <h1>Render Keep-Alive</h1>
+      <p>Pings every 30s to prevent sleep</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="status-row">
+      <div class="status-label">
+        <div class="dot" id="dot"></div>
+        <span id="status-text">ACTIVE</span>
+      </div>
+      <button class="toggle-btn" id="toggle-btn">Disable</button>
+    </div>
+
+    <div class="info-row">
+      <span class="info-key">Last ping</span>
+      <span class="info-val" id="last-ping">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Status</span>
+      <span class="info-val" id="last-status">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Total pings</span>
+      <span class="info-val" id="ping-count">0</span>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-header">
+        <span>Next ping</span>
+        <span id="countdown-val">—</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="ping-btn" id="ping-now-btn">⚡ Ping Now</button>
+
+  <div class="url-bar" title="https://ecom-backend-nest-prisma-postgres-nsa.onrender.com/api/docs#/">
+    ecom-backend-nest-prisma-postgres-nsa.onrender.com/api/docs
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Render Keep-Alive",
+  "version": "1.0.0",
+  "description": "Pings your Render backend every 30 seconds to prevent it from sleeping.",
+  "permissions": ["alarms", "storage"],
+  "host_permissions": [
+    "https://ecom-backend-nest-prisma-postgres-nsa.onrender.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  }
+}
